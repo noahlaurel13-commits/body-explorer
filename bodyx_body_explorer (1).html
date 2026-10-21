@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#06111f">
+<title>BodyX — 3D Body Explorer</title>
+<style>
+:root{--bg:#06111f;--panel:#0a1c2e;--line:#163b59;--blue:#16b9ff;--cyan:#74e5ff;--text:#edf8ff;--muted:#9bb6c9}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#102d48 0%,var(--bg) 55%);color:var(--text);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh}
+.app{max-width:960px;margin:auto;padding:20px 16px 40px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.brand{font-weight:850;letter-spacing:.5px;font-size:1.45rem}.brand span{color:var(--blue)}.pill{border:1px solid var(--line);color:var(--cyan);padding:6px 10px;border-radius:999px;font-size:.78rem}
+.hero{border:1px solid var(--line);background:linear-gradient(140deg,#0d2942,#071421 72%);border-radius:22px;padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:center;box-shadow:0 18px 50px #0004}
+h1{font-size:clamp(1.65rem,5vw,2.5rem);line-height:1.08;margin:0 0 12px}p{color:var(--muted);margin:0 0 16px}.small{font-size:.85rem}.actions{display:flex;flex-wrap:wrap;gap:9px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);border-radius:12px;background:#0b2338;color:var(--text);padding:10px 13px;transition:.18s}button:hover{border-color:var(--blue);transform:translateY(-1px)}button.active,.primary{background:linear-gradient(100deg,#0789e8,#12bfff);border-color:transparent;color:#00111e;font-weight:750}
+.modelbox{background:radial-gradient(ellipse at center,#123d5b 0%,#071522 68%);border:1px solid #164568;border-radius:18px;min-height:310px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.modelbox:before{content:"";position:absolute;inset:0;background-image:linear-gradient(#2f789022 1px,transparent 1px),linear-gradient(90deg,#2f789022 1px,transparent 1px);background-size:25px 25px;mask-image:linear-gradient(transparent,#000,transparent)}
+figure{position:relative;margin:0;width:min(100%,270px);z-index:1;filter:drop-shadow(0 0 16px #17aaff55)}
+svg{width:100%;height:auto;display:block}.layer{display:none}.layer.show{display:block}.skinfill{fill:#e1a985;stroke:#f5c6a5;stroke-width:2}.bone{fill:#f4e7c9;stroke:#b9aa8e;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}.muscle{fill:#d64c58;stroke:#ff8b8f;stroke-width:2}.organ{fill:#df5269;stroke:#ff9aa6;stroke-width:2}.glow{fill:none;stroke:#57d9ff;stroke-width:3;stroke-linecap:round}
+.scanline{position:absolute;left:8%;right:8%;height:3px;background:#4de1ff;box-shadow:0 0 18px #24caff;animation:scan 3s ease-in-out infinite;opacity:.65;z-index:2}@keyframes scan{0%,100%{top:15%}50%{top:83%}}
+.section{margin-top:18px}.section h2{font-size:1.12rem;margin:0 0 10px}.views{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.view{padding:14px 10px;text-align:left;min-height:94px}.view strong{display:block;margin-bottom:4px}.view span{font-size:.8rem;color:var(--muted)}.view.active span{color:#072238}
+.info{margin-top:14px;border:1px solid var(--line);border-radius:16px;padding:16px;background:#091a2a;display:flex;gap:12px;align-items:flex-start}.dot{width:10px;height:10px;border-radius:50%;background:var(--blue);margin-top:6px;box-shadow:0 0 12px var(--blue);flex:none}.info h3{margin:0 0 5px;font-size:1rem}.info p{margin:0;font-size:.92rem}.footer{margin-top:16px;color:#829db1;font-size:.78rem;text-align:center}
+@media(max-width:640px){.hero{grid-template-columns:1fr;padding:16px}.modelbox{min-height:290px;grid-row:1}.views{grid-template-columns:repeat(2,1fr)}.top{align-items:flex-start}.view{min-height:85px}}
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="top"><div class="brand">Body<span>X</span></div><div class="pill">EDUCATIONAL 3D SIMULATION</div></header>
+  <section class="hero">
+    <div>
+      <h1>Explore the human body.</h1>
+      <p>Switch between body layers to learn about the skeleton, muscles, organs, and outer body.</p>
+      <div class="actions">
+        <button class="primary" id="scanBtn">Start simulated scan</button>
+        <button id="resetBtn">Reset view</button>
+      </div>
+      <p class="small" id="status" style="margin-top:12px;margin-bottom:0">Ready to explore · Demo model</p>
+    </div>
+    <div class="modelbox" aria-label="Illustration of a human body">
+      <div class="scanline" id="scanline" hidden></div>
+      <figure>
+        <svg viewBox="0 0 240 430" role="img" aria-label="Simplified interactive anatomy illustration">
+          <!-- simplified silhouette -->
+          <g class="layer show" data-layer="skin">
+            <circle class="skinfill" cx="120" cy="48" r="28"/>
+            <path class="skinfill" d="M99 77 Q82 80 75 99 L60 157 Q56 174 70 179 Q81 182 85 166 L96 126 L94 191 L84 266 Q82 280 96 282 L104 211 L111 291 L105 386 Q104 400 117 400 Q128 400 128 386 L131 293 L139 386 Q139 400 151 400 Q164 399 160 385 L151 291 L157 211 L165 282 Q179 282 178 266 L166 191 L166 126 L178 166 Q182 182 194 179 Q205 174 200 157 L185 99 Q178 80 161 77 L145 72 L95 72 Z"/>
+            <path fill="#c88d6b" d="M100 77 Q120 90 140 77 L147 94 Q120 111 93 94Z" opacity=".55"/>
+          </g>
+          <g class="layer" data-layer="skeleton">
+            <circle class="bone" cx="120" cy="48" r="24"/>
+            <circle fill="#071522" stroke="#b9aa8e" stroke-width="2" cx="111" cy="46" r="5"/><circle fill="#071522" stroke="#b9aa8e" stroke-width="2" cx="129" cy="46" r="5"/>
+            <path class="bone" d="M115 55 L120 62 L125 55 M120 73 L120 167 M99 88 Q120 102 141 88 M97 98 Q120 113 143 98 M95 109 Q120 124 145 109 M94 120 Q120 135 146 120 M96 132 Q120 147 144 132 M100 143 Q120 158 140 143 M120 166 L102 185 L138 185 Z"/>
+            <path class="bone" d="M97 86 L78 113 L68 161 M143 86 L162 113 L172 161 M78 113 L69 171 M162 113 L171 171" fill="none" stroke-width="7"/>
+            <path class="bone" d="M102 185 L101 251 L97 310 L92 383 M138 185 L139 251 L143 310 L148 383" fill="none" stroke-width="10"/>
+            <path class="bone" d="M101 251 L139 251 M97 310 L143 310" fill="none" stroke-width="6"/>
+            <path class="bone" d="M92 383 L79 395 L106 395 M148 383 L135 395 L162 395" fill="none" stroke-width="7"/>
+          </g>
+          <g class="layer" data-layer="muscles">
+            <circle class="muscle" cx="120" cy="48" r="24"/>
+            <path class="muscle" d="M99 78 L88 88 L78 119 L91 157 L101 169 L111 157 L109 112 L120 126 L131 112 L129 157 L139 169 L149 157 L162 119 L152 88 L141 78 L120 91Z"/>
+            <path class="muscle" d="M88 90 L74 116 L65 162 Q66 176 75 176 L92 127 M152 90 L166 116 L175 162 Q174 176 165 176 L148 127" />
+            <path class="muscle" d="M102 170 L138 170 L145 238 L135 255 L105 255 L95 238Z"/>
+            <path class="muscle" d="M104 255 L96 311 L90 380 L105 385 L115 312 L120 266 L125 312 L135 385 L150 380 L144 311 L136 255Z"/>
+            <path fill="#f08088" d="M101 101 L117 116 L111 153 L100 143Z M139 101 L123 116 L129 153 L140 143Z" opacity=".8"/>
+          </g>
+          <g class="layer" data-layer="organs">
+            <circle class="bone" cx="120" cy="48" r="24" opacity=".2"/>
+            <path fill="#7a91ee" stroke="#b8c5ff" stroke-width="2" d="M116 82 Q103 84 105 100 L111 111 L116 104 L120 111 L125 103 L132 111 L136 98 Q136 84 124 82Z"/>
+            <path fill="#f08b9b" stroke="#ffbdc7" stroke-width="2" d="M117 115 Q94 103 92 129 Q90 151 112 160 L119 150 L119 123Z M123 115 Q146 103 148 129 Q150 151 128 160 L121 150 L121 123Z"/>
+            <path fill="#d83e53" stroke="#ff9ba6" stroke-width="2" d="M120 128 C106 116 102 137 120 151 C138 137 134 116 120 128Z"/>
+            <path fill="#8e4d48" stroke="#e89b88" stroke-width="2" d="M99 169 Q110 154 127 165 Q140 171 137 184 Q120 195 100 184Z"/>
+            <path fill="#d8a45e" stroke="#ffda91" stroke-width="2" d="M128 188 Q151 178 147 194 Q142 205 126 202 Q112 211 105 199 Q100 190 114 187Z"/>
+            <path fill="none" stroke="#ff9ab1" stroke-width="5" stroke-linecap="round" d="M103 211 Q93 220 105 227 T106 244 T124 244 T135 229 T126 214"/>
+          </g>
+          <g class="layer" data-layer="skin">
+            <path class="glow" d="M91 104 Q120 121 149 104 M92 174 Q120 190 148 174" opacity=".55"/>
+          </g>
+        </svg>
+      </figure>
+    </div>
+  </section>
+  <section class="section">
+    <h2>Choose a body layer</h2>
+    <div class="views">
+      <button class="view active" data-view="skin"><strong>🧍 Skin / body</strong><span>Outer body view</span></button>
+      <button class="view" data-view="skeleton"><strong>🦴 Skeleton</strong><span>Bones and joints</span></button>
+      <button class="view" data-view="muscles"><strong>💪 Muscles</strong><span>Movement system</span></button>
+      <button class="view" data-view="organs"><strong>🫀 Organs</strong><span>Inside the body</span></button>
+    </div>
+  </section>
+  <section class="info" aria-live="polite"><div class="dot"></div><div><h3 id="infoTitle">Skin / body</h3><p id="infoText">Skin is the body's outer covering. This simplified illustration is a learning model, not a scan of your body.</p></div></section>
+  <p class="footer">Important: A phone camera cannot see through skin or identify real bones and organs. This demo is an educational simulation, not a medical device.</p>
+</main>
+<script>
+const details={
+ skin:{title:"Skin / body",text:"Skin is the body's outer covering. This simplified illustration is a learning model, not a scan of your body."},
+ skeleton:{title:"Skeleton",text:"The adult human skeleton usually has 206 bones. Bones support the body, protect some organs, and work with muscles to help you move."},
+ muscles:{title:"Muscles",text:"Muscles contract to create movement and help maintain posture. This illustration shows a simplified muscle layer."},
+ organs:{title:"Internal organs",text:"Organs such as the brain, lungs, heart, liver, and stomach each have important jobs. Their positions and shapes here are simplified."}
+};
+const views=[...document.querySelectorAll("[data-view]")], layers=[...document.querySelectorAll(".layer")];
+function setView(name){views.forEach(b=>b.classList.toggle("active",b.dataset.view===name));layers.forEach(g=>g.classList.toggle("show",g.dataset.layer===name));document.getElementById("infoTitle").textContent=details[name].title;document.getElementById("infoText").textContent=details[name].text;document.getElementById("status").textContent="Viewing: "+details[name].title+" · Demo model";}
+views.forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
+document.getElementById("resetBtn").addEventListener("click",()=>{setView("skin");document.getElementById("scanline").hidden=true;document.getElementById("status").textContent="Ready to explore · Demo model";document.getElementById("scanBtn").textContent="Start simulated scan";});
+document.getElementById("scanBtn").addEventListener("click",()=>{const line=document.getElementById("scanline"),btn=document.getElementById("scanBtn"),status=document.getElementById("status");if(!line.hidden){line.hidden=true;btn.textContent="Start simulated scan";status.textContent="Simulation stopped · Demo model";return;}line.hidden=false;btn.textContent="Stop simulation";status.textContent="Simulating a scan effect… this does not scan your actual body.";});
+</script>
+</body>
+</html>
