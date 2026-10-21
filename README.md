@@ -1,2 +1,1 @@
-# body-explorer
-bodyx
+index.html
